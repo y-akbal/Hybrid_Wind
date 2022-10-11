@@ -6,15 +6,12 @@ Created on Thu Oct  6 19:56:38 2022
 @author: sahmaran
 """
 
-import tensorflow as tf
-from tensorflow.keras.layers import Dense, LSTM, Dropout,Embedding
-from tensorflow.keras.activations import relu, softmax, gelu
-from tensorflow.keras.models import Model
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.preprocessing.sequence import TimeseriesGenerator
-from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.keras.losses import mean_squared_error, categorical_crossentropy, sparse_categorical_crossentropy
+class CompilationError(Exception):
+    def __init__(self, message="First compile the model with your input shapes e.g. compile_(lags_to_be_used)"):
+        self.message = message
+        super().__init__(self.message)
 
+ 
 
 
 
