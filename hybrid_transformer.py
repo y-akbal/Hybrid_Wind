@@ -5,13 +5,11 @@ Welcome home homie!
 import argparse# Create the parser
 parser = argparse.ArgumentParser()# Add an argument
 parser.add_argument('--lr', type=float, required=True)# Parse the argument
-parser.add_argument('--epochs', type=int, required=False)# Parse the argument
+parser.add_argument('--batch_size', type=float, required=True)# Parse the argument
+parser.add_argument('--epochs', type=int, required=True)# Parse the argument
 parser.add_argument('--decay_rate', type=float, required=False)# Parse the argument
 
 args = parser.parse_args()# Print "Hello" + the user input argument
-
-print(args.lr, args.decay_rate, args.epochs)
-
 
 import time
 import pandas as pd
@@ -28,7 +26,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.losses import mean_squared_error, categorical_crossentropy, sparse_categorical_crossentropy
 from tensorflow.keras.layers import Concatenate, concatenate
-from tensorflow.keras.callbacks import ReduceLROnPlateau, LearningRateScheduler, CSVLogger
+from tensorflow.keras.callbacks import ReduceLROnPlateau, LearningRateScheduler, CSVLogger, TensorBoard, RemoteMonitor
 
 ### helper functions
 """
@@ -38,40 +36,13 @@ try:
     from helper_functions import write_log ### this dude creates a log.txt file including some details about training
     from helper_functions import return_files, time_series_slices 
     from layers import upsample_conv, self_attention, self_attention_heads, upsampling_block, upsampling_block_with_embedding
+    from training_details import training_details
+    write_log("Hand crafted modules are succefully loaded dude!")
 except Exception as exception:
     raise ImportError("Something is wrong with libraries see the related .py files")
-###
-
-"""
-Some, but not all, the details of training process
-"""
+    write_log("Something is wrong with libraries see the related .py files")
 
 
-
-
-@dataclass### we create here a data class keeping the details for the training stuff
-class training_details:
-    #####
-    lr: float = 0.001
-    epochs: int = 50
-    batch_size: int = 128
-    decay_rate: float = -0.1
-    #internal_dims: list[int] = [128, 256, 256, 256]
-    #lags: list[int] = [512, 64, 16, 8]
-    #pool_size: list[int] = [8, 4, 2, 1, 1]
-    #####
-
-"""
-Time for callbacks
-"""
-def scheduler(epoch, lr):  #### This guy is responsible for scheduling the learning rate
-  if epoch < 3:
-    return lr
-  else:
-    return lr * tf.math.exp(-0.1)
-
-lrs = LearningRateScheduler(scheduler)
-csv_logger = CSVLogger("log.csv")
 """
 Time for the mail model
 """
@@ -84,15 +55,11 @@ class main_model(Model):
         self.pool_sizes = pool_sizes
         self.initial_lag = lags
         self.internal_dims = internal_dims
-        """
-        Some stuff related with lags of the time series
-        """
+        """  Some stuff related with lags of the time series """
         self._lags = []
         self.set_lags()        
         
-        """
-        Recurrent head
-        """
+        """ Recurrent head """
         self.lstm = LSTM(recurent_head_dim)
         self.dense = Dense(1)
         self.recurrent_head = Sequential([self.lstm, self.dense])
@@ -105,7 +72,7 @@ class main_model(Model):
             internal_dim = internal_dims[0],
             use_embed = True,
             )
-        self.rest = Sequential([upsampling_block(i,j,k) for i,j,k in zip(self.pool_sizes[1:], self._lags[1:], self.internal_dims[1:])])
+        self.rest = Sequential([upsampling_block(i,int(j),k) for i,j,k in zip(self.pool_sizes[1:], self._lags[1:], self.internal_dims[1:])])
         ### pool_size = 2,lags = 16, internal_dim =  256
         """end of the main blocks"""
         ####
@@ -123,28 +90,37 @@ class main_model(Model):
     def call(self, inputs, training = None):
         x = self.first_layer(inputs, training)
         x = self.rest(x, training)
-        x = self.recurrent_head(x, training)
-        return None
+        x = self.recurrent_head(x)
+        return x
 
 
-"""
-Time for the main function
-"""
+
+""" Time for the main function """
 
 if __name__ == "__main__":
-    """
+    
+    write_log("Training started") 
+    td = training_details()
+    
+    
+    
+    
+    
     _, data_ = return_files()
     print("Splitting the above series...")
     slicer = time_series_slices(512)
     train, test = slicer.fit_transform(data_)
     X_train, y_train,  train_class = train
     X_test, y_test,  test_class = test
+    
     print("Splitting into test and train sets is done!")
-    """
+    
+    
+    
     model = main_model()
-    model([np.random.randn(1,512),1])
+    model([np.random.randn(2,512,1),np.array([1,2])])
     
-    
+    write_log("Training ended")
     #return_files()
     #
     #

@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -20,6 +21,8 @@ from tensorflow.keras.callbacks import ReduceLROnPlateau, LearningRateScheduler,
 import numpy as np
 
 
+
+
 """
 Time for layers
 """
@@ -34,8 +37,8 @@ class upsample_conv(Layer):
         self.use_embed = use_embed
         if use_embed:
             self.embed = Embedding(int(lags/pool_size), internal_dim)
-        self.list = np.array([i for i in range(int(lags/pool_size))])
-    @tf.function
+            self.list = tf.constant([i for i in range(int(lags/pool_size))])
+    @tf.function(jit_compile= True)
     def call(self, inputs, training = None):
         x = self.conv(inputs)
         if self.use_embed:
@@ -43,7 +46,6 @@ class upsample_conv(Layer):
         x = self.activation(x)
         x = self.norm(x, training)
         return x
-
 
 
 class self_attention(Layer):
@@ -63,7 +65,7 @@ class self_attention(Layer):
             minf = -tf.constant(20000.0)  ### take this dude to kill softmax maybe a little bit smaller.
             mask = tf.fill(shape, minf)
             self.upper_m = minf - tf.linalg.band_part(mask, num_lower = -1, num_upper = 0)
-    @tf.function       
+    @tf.function(jit_compile = True)
     def call(self, inputs, training = None):
         if training:
             inputs = self.dropout(inputs, training) ### dropout is applied in the begining of the layer
@@ -100,7 +102,7 @@ class self_attention_heads(Layer):
             mask = tf.fill(shape, minf)
             self.upper_m = minf - tf.linalg.band_part(mask, num_lower = -1, num_upper = 0)
             
-    @tf.function       
+    @tf.function(jit_compile = True)
     def call(self, inputs, training = None):
         if training:
             inputs = self.dropout(inputs, training) ### dropout is applied in the begining of the layer
@@ -136,6 +138,7 @@ class upsampling_block(Model):
                                         dropout= dropout_rate,
                                         )
         self.batch_norm = BatchNormalization()
+    @tf.function(jit_compile = True)
     def call(self, inputs, training = None):
         t = self.upsample_conv(inputs, training)
         x = self.dropout(t, training)
@@ -144,11 +147,10 @@ class upsampling_block(Model):
         x = self.batch_norm(x, training)
         return x
 
-
 class upsampling_block_with_embedding(Model):
     def __init__(self, pool_size, lags, 
                  internal_dim, dropout_rate = 0.4, 
-                 number_embeedings = 8,
+                 number_embeedings = 8, ### this is the number of time series to be used should be adjusted properly
                  causal = True, **kwargs):
         super().__init__()
         self.upsample_conv = upsample_conv(pool_size = pool_size,
@@ -156,22 +158,21 @@ class upsampling_block_with_embedding(Model):
                                            internal_dim = internal_dim,
                                            use_embed = True)
         self.embedding = Embedding(number_embeedings, internal_dim)
-
         self.dropout = Dropout(dropout_rate)
         self.dense = Dense(internal_dim)
         self.att = Attention(causal = causal)
         self.batch_norm = BatchNormalization()
-        
+    @tf.function(jit_compile = True)
     def call(self, inputs, training = None):
         inputs_1, inputs_2 = inputs[0], inputs[1]
+        embeddings = self.embedding(inputs_2)
+
         t = self.upsample_conv(inputs_1, training)
         x = self.dropout(t, training)
-        x = self.dense(x)+inputs_2 ### yet another residual connection here!
+        x = self.dense(x)+tf.expand_dims(embeddings, 1)### yet another residual connection here!
         x = self.att([x,x], training) + t #### residual connection here!
         x = self.batch_norm(x, training)
         return x
-
-
 
 """
 Create the main model
