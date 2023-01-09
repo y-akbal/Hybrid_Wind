@@ -13,3 +13,5 @@ Some notes:
 
 --- 2) A single GPU is mostly enough for any kind of purposses.
 
+----3) At the end of training process, the model will be saved automatically.
+
