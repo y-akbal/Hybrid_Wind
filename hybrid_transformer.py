@@ -134,6 +134,9 @@ if __name__ == "__main__":
 
     
     write_log("Training ended")
+    
+    
+    model.save("hybrid_wind")
     #return_files()
     #
     #
