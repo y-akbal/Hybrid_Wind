@@ -5,9 +5,9 @@ Welcome home homie!
 import argparse# Create the parser
 parser = argparse.ArgumentParser()# Add an argument
 parser.add_argument('--lr', type=float, required=True)# Parse the argument
-parser.add_argument('--batch_size', type=float, required=True)# Parse the argument
+parser.add_argument('--batch_size', type=int, required=True)# Parse the argument
 parser.add_argument('--epochs', type=int, required=True)# Parse the argument
-parser.add_argument('--decay_rate', type=float, required=False)# Parse the argument
+parser.add_argument('--decay_rate', type=float, required=True)# Parse the argument
 
 args = parser.parse_args()# Print "Hello" + the user input argument
 
@@ -37,7 +37,7 @@ try:
     from helper_functions import return_files, time_series_slices 
     from layers import upsample_conv, self_attention, self_attention_heads, upsampling_block, upsampling_block_with_embedding
     from training_details import training_details
-    write_log("Hand crafted modules are succefully loaded dude!")
+    write_log("Hand crafted modules are succefully loaded!")
 except Exception as exception:
     raise ImportError("Something is wrong with libraries see the related .py files")
     write_log("Something is wrong with libraries see the related .py files")
@@ -73,7 +73,6 @@ class main_model(Model):
             use_embed = True,
             )
         self.rest = Sequential([upsampling_block(i,int(j),k) for i,j,k in zip(self.pool_sizes[1:], self._lags[1:], self.internal_dims[1:])])
-        ### pool_size = 2,lags = 16, internal_dim =  256
         """end of the main blocks"""
         ####
     def set_lags(self):
@@ -85,6 +84,17 @@ class main_model(Model):
                 self._lags.append(lag)
             else:
                 raise ValueError("Jeeezzz, somethin' went wrong bro, can't ya get it????? Check with the pool sizes")
+    
+    def fit_(self, args):
+        td = training_details(vars(args))
+        print(vars(td))
+        
+        self.compile(loss = td.loss, optimizer = td.optimizer, jit_compile = True)
+        self.fit(X_train, y_train, batch_size = td.batch_size,
+                 epochs = td.epochs, 
+                 validation_data = (X_test, y_test), 
+                 callbacks = td.callbacks)
+        
         
     @tf.function(jit_compile = True)
     def call(self, inputs, training = None):
@@ -92,7 +102,7 @@ class main_model(Model):
         x = self.rest(x, training)
         x = self.recurrent_head(x)
         return x
-
+    
 
 
 """ Time for the main function """
@@ -100,7 +110,6 @@ class main_model(Model):
 if __name__ == "__main__":
     
     write_log("Training started") 
-    td = training_details()
     
     
     
@@ -115,10 +124,14 @@ if __name__ == "__main__":
     
     print("Splitting into test and train sets is done!")
     
-    
-    
+    write_log("Splitting is done!") 
+
+    write_log("The model is being initiated!") 
+
     model = main_model()
-    model([np.random.randn(2,512,1),np.array([1,2])])
+    write_log("Training Started!") 
+    model.fit_(args)
+
     
     write_log("Training ended")
     #return_files()
