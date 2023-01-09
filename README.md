@@ -1,4 +1,4 @@
-# Time_series_with_head
+# Attention Based Time Series Prediction
 
 Put all your possibly correlated time series files into the same directory, with the header "ws". The time_series_slicer class will pick up the columns with "ws" header.
 
