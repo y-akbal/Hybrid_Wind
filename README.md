@@ -1,6 +1,6 @@
 # Hybrid Transformer Model for Time Series Prediction
 
-![d](png.png |width=100)
+![d](png.png)
 
 Put all your possibly correlated time series files into the same directory, with the headers "ws". The time_series_slicer class will pick up the columns with "ws" header. Slice them up, into sliding windows with a window size  512. 
 
