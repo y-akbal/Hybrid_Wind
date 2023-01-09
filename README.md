@@ -15,4 +15,4 @@ Some notes:
 
 ---- 3) At the end of training process, the model will be saved automatically. 
 
----- 4) If you'ld like to replicate the results in the **aforementioned article**, [download the dataset from here!](https://www.kaggle.com/competitions/GEF2012-wind-forecasting/data"). Training the model for 5 or 6 epochs, you should reach approximately 0.992 $R^2$ score on the test set.  
+---- 4) If you'ld like to replicate the results in the **aforementioned article**, [download the dataset from here!](https://www.kaggle.com/competitions/GEF2012-wind-forecasting/data"). Training the model for 5 or 6 epochs, you should reach approximately 0.992 $R^2$ (average of 7 wind farms) score on the test set.  
