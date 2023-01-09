@@ -13,5 +13,7 @@ Some notes:
 
 --- 2) A single GPU is mostly enough for any kind of purposses.
 
-----3) At the end of training process, the model will be saved automatically.
+---- 3) At the end of training process, the model will be saved automatically. 
 
+---- 4) If you'ld like to replicate the results in the **aforementioned article***, [Download the dataset from here!](https://www.kaggle.com/competitions/GEF2012-wind-forecasting/data").
+      On training the model after 5 or 6 epochs you should reach approximately 0.992 R squared score on the test set.  
