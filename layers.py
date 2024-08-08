@@ -8,7 +8,7 @@ Created on Sat Dec 31 16:53:20 2022
 """
 import tensorflow as tf
 
-from tensorflow.keras.layers import Dense, LSTM, Dropout,Embedding, GRU, BatchNormalization, Input, Attention
+from tensorflow.keras.layers import Dense, LSTM, Dropout,Embedding, GRU, BatchNormalization, Input, Attention, LayerNormalization
 from tensorflow.keras.layers import Conv1D, Conv2D
 from tensorflow.keras.activations import relu, softmax, gelu
 from tensorflow.keras.models import Model
@@ -137,7 +137,7 @@ class upsampling_block(Model):
                                         causal = causal,
                                         dropout= dropout_rate,
                                         )
-        self.batch_norm = BatchNormalization()
+        self.lay_norm = LayerNormalization()
     @tf.function(jit_compile = True)
     def call(self, inputs, training = None):
         t = self.upsample_conv(inputs, training)
