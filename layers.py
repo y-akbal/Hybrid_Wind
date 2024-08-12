@@ -8,7 +8,7 @@ Created on Sat Dec 31 16:53:20 2022
 """
 import tensorflow as tf
 
-from tensorflow.keras.layers import Dense, LSTM, Dropout,Embedding, GRU, BatchNormalization, Input, Attention, LayerNormalization
+from tensorflow.keras.layers import Dense, LSTM, Dropout,Embedding, GRU, Input, Attention, LayerNormalization
 from tensorflow.keras.layers import Conv1D, Conv2D
 from tensorflow.keras.activations import relu, softmax, gelu
 from tensorflow.keras.models import Model
@@ -33,7 +33,7 @@ class upsample_conv(Layer):
         super().__init__()
         self.conv = Conv1D(filters = internal_dim, kernel_size = pool_size, strides = pool_size, use_bias = True)
         self.activation = tf.keras.activations.get(activation)
-        self.norm = BatchNormalization()
+        self.norm = LayerNormalization()
         self.use_embed = use_embed
         if use_embed:
             self.embed = Embedding(int(lags/pool_size), internal_dim)
@@ -143,8 +143,9 @@ class upsampling_block(Model):
         t = self.upsample_conv(inputs, training)
         x = self.dropout(t, training)
         x = self.dense(x)
+        x = self.dropout(x, training)
         x = self.att([x,x], training)+t #### residual connection here!
-        x = self.batch_norm(x, training)
+        x = self.layer_norm(x, training)
         return x
 
 class upsampling_block_with_embedding(Model):
@@ -161,7 +162,7 @@ class upsampling_block_with_embedding(Model):
         self.dropout = Dropout(dropout_rate)
         self.dense = Dense(internal_dim)
         self.att = Attention(causal = causal)
-        self.batch_norm = BatchNormalization()
+        self.layer_norm = LayerNormalization()
     @tf.function(jit_compile = True)
     def call(self, inputs, training = None):
         inputs_1, inputs_2 = inputs[0], inputs[1]
@@ -171,7 +172,7 @@ class upsampling_block_with_embedding(Model):
         x = self.dropout(t, training)
         x = self.dense(x)+tf.expand_dims(embeddings, 1)### yet another residual connection here!
         x = self.att([x,x], training) + t #### residual connection here!
-        x = self.batch_norm(x, training)
+        x = self.layer_norm(x, training)
         return x
 
 """
