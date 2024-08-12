@@ -167,7 +167,6 @@ class upsampling_block_with_embedding(Model):
     def call(self, inputs, training = None):
         inputs_1, inputs_2 = inputs[0], inputs[1]
         embeddings = self.embedding(inputs_2)
-
         t = self.upsample_conv(inputs_1, training)
         x = self.dropout(t, training)
         x = self.dense(x)+tf.expand_dims(embeddings, 1)### yet another residual connection here!
